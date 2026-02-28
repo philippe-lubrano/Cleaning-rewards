@@ -62,9 +62,12 @@ export default function SelectUser() {
                 </button>
               </form>
             ) : (
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => handleSelect(user.id)}
-                className="w-full bg-white rounded-2xl shadow-sm border border-stone-200 p-5 flex items-center justify-between hover:shadow-md hover:border-teal-200 transition-all active:scale-[0.98]"
+                onKeyDown={(e) => e.key === 'Enter' && handleSelect(user.id)}
+                className="w-full bg-white rounded-2xl shadow-sm border border-stone-200 p-5 flex items-center justify-between hover:shadow-md hover:border-teal-200 transition-all active:scale-[0.98] cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-xl">
@@ -85,7 +88,7 @@ export default function SelectUser() {
                   </button>
                   <span className="text-stone-300 text-xl">›</span>
                 </div>
-              </button>
+              </div>
             )}
           </div>
         ))}
