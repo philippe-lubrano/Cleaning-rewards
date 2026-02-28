@@ -49,11 +49,7 @@ export default function History() {
                 key={entry.id}
                 className="bg-white rounded-xl border border-stone-200 px-4 py-3 flex items-center gap-3"
               >
-                <span
-                  className={`text-lg ${
-                    entry.type === 'task' ? '' : ''
-                  }`}
-                >
+                <span className="text-lg">
                   {entry.type === 'task' ? '✅' : '🎁'}
                 </span>
                 <div className="flex-1 min-w-0">
