@@ -71,12 +71,12 @@ export default function TaskAdmin() {
         <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">
           Modifier ton prénom
         </h3>
-        <form key={currentUser?.id} onSubmit={handleUpdateFirstName} className="flex gap-2">
+        <form key={currentUser?.id} onSubmit={handleUpdateFirstName} className="flex justify-between gap-2">
           <input
             type="text"
             name="firstName"
             defaultValue={currentUser?.name || ''}
-            className="flex-1 rounded-xl border border-stone-300 px-4 py-2.5 text-stone-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
+            className="flex-1 rounded-xl border border-stone-300 px-4 py-2.5 text-stone-700 focus:outline-none focus:ring-2 focus:ring-teal-300 max-w-[180px]"
             placeholder="Ton prénom"
             required
           />

@@ -106,7 +106,7 @@ export default function Rewards() {
                     disabled={
                       currentUser.points < reward.cost || purchasedId === reward.id
                     }
-                    className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                    className={`flex-none w-fit rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                       purchasedId === reward.id
                         ? 'bg-green-100 text-green-600'
                         : currentUser.points >= reward.cost
