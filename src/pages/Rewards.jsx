@@ -3,13 +3,24 @@ import { useApp } from '../context/useApp'
 import Modal from '../components/Modal'
 
 export default function Rewards() {
-  const { currentUser, users, rewards, history, addReward, editReward, removeReward, buyReward } =
+  const {
+    currentUser,
+    users,
+    rewards,
+    history,
+    addReward,
+    editReward,
+    removeReward,
+    buyReward,
+    donatePoints,
+  } =
     useApp()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', cost: '' })
   const [purchasedId, setPurchasedId] = useState(null)
+  const [donationForm, setDonationForm] = useState({ points: '', comment: '' })
 
   const partner = users.find((u) => u.id !== currentUser.id)
 
@@ -68,9 +79,66 @@ export default function Rewards() {
     }
   }
 
+  const handleDonationSubmit = async (e) => {
+    e.preventDefault()
+    const points = parseInt(donationForm.points, 10) || 0
+    const comment = donationForm.comment.trim()
+    if (points <= 0 || !partner) return
+
+    const result = await donatePoints({ points, comment })
+    if (result) {
+      setDonationForm({ points: '', comment: '' })
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-stone-700">🎁 Boutique</h2>
+
+      <div>
+        <h3 className="text-xs font-semibold text-teal-500 uppercase tracking-wide mb-3">
+          Donner des points à {partner?.name || 'ton partenaire'}
+        </h3>
+        <div className="bg-white rounded-xl border border-stone-200 px-4 py-4">
+          <form onSubmit={handleDonationSubmit} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-stone-600 mb-1">Points à donner</label>
+              <input
+                type="number"
+                min="1"
+                value={donationForm.points}
+                onChange={(e) => setDonationForm({ ...donationForm, points: e.target.value })}
+                className="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
+                placeholder="Ex: 20"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-stone-600 mb-1">Commentaire</label>
+              <input
+                type="text"
+                value={donationForm.comment}
+                onChange={(e) => setDonationForm({ ...donationForm, comment: e.target.value })}
+                className="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
+                placeholder="Ex: Merci pour le jardin"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={!partner}
+              className={`w-full rounded-xl py-3 font-medium transition-all ${
+                !partner
+                  ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                  : 'bg-teal-500 text-white hover:bg-teal-600 active:scale-[0.98]'
+              }`}
+            >
+              Donner les points
+            </button>
+          </form>
+        </div>
+      </div>
 
       {/* Rewards I can buy */}
       <div>

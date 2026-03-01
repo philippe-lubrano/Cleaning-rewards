@@ -727,6 +727,107 @@ export async function purchaseReward(rewardId, userId) {
   return { reward, user: updatedUser, entry }
 }
 
+export async function givePointsToPartner(fromUserId, points, comment) {
+  const amount = Number(points || 0)
+  const message = String(comment || '').trim()
+  if (amount <= 0) return null
+
+  if (!hasCurrentFoyerPseudo()) return null
+  if (!isSupabaseConfigured()) {
+    const data = loadLocalData()
+    if (!data) return null
+
+    const fromUser = data.users.find((user) => user.id === fromUserId)
+    const toUser = data.users.find((user) => user.id !== fromUserId)
+
+    if (!fromUser || !toUser) return null
+
+    toUser.points += amount
+
+    const partnerEntry = {
+      id: crypto.randomUUID(),
+      foyer_id: data.foyer.id,
+      user_id: toUser.id,
+      type: 'reward',
+      reference_id: null,
+      description: `Don reçu de ${fromUser.name}${message ? ` : ${message}` : ''}`,
+      points: amount,
+      created_at: new Date().toISOString(),
+    }
+
+    data.history.push(partnerEntry)
+
+    data.notifications.push({
+      id: crypto.randomUUID(),
+      for_user: toUser.id,
+      message: `💚 ${fromUser.name} t'a donné ${amount} point${amount > 1 ? 's' : ''}${message ? ` : ${message}` : ''}`,
+      read: false,
+      created_at: new Date().toISOString(),
+    })
+
+    saveLocalData(data)
+    return { fromUser: { ...fromUser }, toUser: { ...toUser } }
+  }
+
+  const foyerId = await getFoyerId()
+  if (!foyerId) return null
+
+  const { data: fromUser, error: fromUserError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', fromUserId)
+    .eq('foyer_id', foyerId)
+    .maybeSingle()
+
+  if (fromUserError) throw fromUserError
+  if (!fromUser) return null
+
+  const { data: toUser, error: toUserError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('foyer_id', foyerId)
+    .neq('id', fromUserId)
+    .limit(1)
+    .maybeSingle()
+
+  if (toUserError) throw toUserError
+  if (!toUser) return null
+
+  const { data: updatedToUser, error: updateToUserError } = await supabase
+    .from('users')
+    .update({ points: Number(toUser.points || 0) + amount })
+    .eq('id', toUser.id)
+    .select('*')
+    .single()
+
+  if (updateToUserError) throw updateToUserError
+
+  const historyRows = [
+    {
+      foyer_id: foyerId,
+      user_id: updatedToUser.id,
+      type: 'reward',
+      reference_id: null,
+      description: `Don reçu de ${fromUser.name}${message ? ` : ${message}` : ''}`,
+      points: amount,
+    },
+  ]
+
+  const { error: historyError } = await supabase.from('history').insert(historyRows)
+  if (historyError) throw historyError
+
+  const { error: notificationError } = await supabase.from('notifications').insert({
+    foyer_id: foyerId,
+    for_user: updatedToUser.id,
+    message: `💚 ${fromUser.name} t'a donné ${amount} point${amount > 1 ? 's' : ''}${message ? ` : ${message}` : ''}`,
+    read: false,
+  })
+
+  if (notificationError) throw notificationError
+
+  return { fromUser, toUser: updatedToUser }
+}
+
 // ---- History ----
 
 export async function getHistory() {

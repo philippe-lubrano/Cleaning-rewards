@@ -225,6 +225,19 @@ export function AppProvider({ children }) {
     [currentUser, refreshAll]
   )
 
+  const donatePoints = useCallback(
+    async ({ points, comment }) => {
+      if (!currentUser) return null
+      const result = await store.givePointsToPartner(currentUser.id, points, comment)
+      if (result) {
+        setCurrentUser(result.fromUser)
+        await refreshAll()
+      }
+      return result
+    },
+    [currentUser, refreshAll]
+  )
+
   const dismissNotification = useCallback(
     async (notifId) => {
       await store.markNotificationRead(notifId)
@@ -274,6 +287,7 @@ export function AppProvider({ children }) {
     editReward,
     removeReward,
     buyReward,
+    donatePoints,
     dismissNotification,
     clearNotifications,
     updateUserName,
