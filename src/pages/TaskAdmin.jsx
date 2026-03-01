@@ -7,7 +7,6 @@ export default function TaskAdmin() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', points: '', recurrence_days: '' })
-  const [firstName, setFirstName] = useState(() => currentUser?.name || '')
 
   const openNew = () => {
     setEditing(null)
@@ -50,7 +49,8 @@ export default function TaskAdmin() {
 
   const handleUpdateFirstName = (e) => {
     e.preventDefault()
-    const name = firstName.trim()
+    const formData = new FormData(e.currentTarget)
+    const name = String(formData.get('firstName') || '').trim()
     if (!name || !currentUser) return
     updateUserName(currentUser.id, name)
   }
@@ -71,11 +71,11 @@ export default function TaskAdmin() {
         <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">
           Modifier ton prénom
         </h3>
-        <form onSubmit={handleUpdateFirstName} className="flex gap-2">
+        <form key={currentUser?.id} onSubmit={handleUpdateFirstName} className="flex gap-2">
           <input
             type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            name="firstName"
+            defaultValue={currentUser?.name || ''}
             className="flex-1 rounded-xl border border-stone-300 px-4 py-2.5 text-stone-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
             placeholder="Ton prénom"
             required

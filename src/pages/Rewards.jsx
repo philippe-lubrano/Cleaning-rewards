@@ -127,7 +127,7 @@ export default function Rewards() {
 
       <div>
         <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">
-          Récompenses déjà achetée
+          Récompenses déjà achetées
         </h3>
         {purchasedForMe.length === 0 ? (
           <div className="text-center py-6 bg-white/60 rounded-xl border border-stone-100">
