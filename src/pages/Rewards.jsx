@@ -3,7 +3,7 @@ import { useApp } from '../context/useApp'
 import Modal from '../components/Modal'
 
 export default function Rewards() {
-  const { currentUser, users, rewards, addReward, editReward, removeReward, buyReward } =
+  const { currentUser, users, rewards, history, addReward, editReward, removeReward, buyReward } =
     useApp()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -17,6 +17,13 @@ export default function Rewards() {
   // Rewards created by the partner = things the current user can buy
   const myCreated = rewards.filter((r) => r.created_by === currentUser.id)
   const forMe = rewards.filter((r) => r.created_by !== currentUser.id)
+  const purchasedRewardIds = new Set(
+    history
+      .filter((entry) => entry.type === 'reward' && entry.user_id === currentUser.id)
+      .map((entry) => entry.reference_id)
+  )
+  const availableForMe = forMe.filter((reward) => !purchasedRewardIds.has(reward.id))
+  const purchasedForMe = forMe.filter((reward) => purchasedRewardIds.has(reward.id))
 
   const openNew = () => {
     setEditing(null)
@@ -70,7 +77,7 @@ export default function Rewards() {
         <h3 className="text-xs font-semibold text-teal-500 uppercase tracking-wide mb-3">
           Récompenses disponibles pour toi
         </h3>
-        {forMe.length === 0 ? (
+        {availableForMe.length === 0 ? (
           <div className="text-center py-6 bg-white/60 rounded-xl border border-stone-100">
             <p className="text-stone-400 text-sm">
               {partner?.name || 'Ton partenaire'} n'a pas encore créé de récompenses
@@ -78,7 +85,7 @@ export default function Rewards() {
           </div>
         ) : (
           <div className="space-y-2">
-            {forMe.map((reward) => (
+            {availableForMe.map((reward) => (
               <div
                 key={reward.id}
                 className={`bg-white rounded-xl border px-4 py-4 transition-all ${
@@ -110,6 +117,39 @@ export default function Rewards() {
                     {purchasedId === reward.id
                       ? '🎉 Acheté !'
                       : `🛒 ${reward.cost} pts`}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">
+          Récompenses déjà achetées
+        </h3>
+        {purchasedForMe.length === 0 ? (
+          <div className="text-center py-6 bg-white/60 rounded-xl border border-stone-100">
+            <p className="text-stone-400 text-sm">Aucune récompense achetée pour le moment</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {purchasedForMe.map((reward) => (
+              <div key={reward.id} className="bg-stone-50 rounded-xl border border-stone-200 px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-stone-600">{reward.name}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      Créé par {users.find((u) => u.id === reward.created_by)?.name}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled
+                    className="rounded-xl px-4 py-2 text-sm font-medium bg-stone-100 text-stone-400 cursor-not-allowed"
+                  >
+                    🛒 {reward.cost} pts
                   </button>
                 </div>
               </div>

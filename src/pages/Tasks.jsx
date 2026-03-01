@@ -37,9 +37,12 @@ export default function Tasks() {
           </h3>
           <div className="space-y-2">
             {dueTasks.map((task) => (
-              <div
+              <button
+                type="button"
                 key={task.id}
-                className={`bg-white rounded-xl border px-4 py-4 flex items-center justify-between transition-all ${
+                onClick={() => handleComplete(task.id)}
+                disabled={completedId === task.id}
+                className={`w-full bg-white rounded-xl border px-4 py-4 flex items-center justify-between text-left transition-all ${
                   completedId === task.id
                     ? 'border-green-300 bg-green-50 scale-[0.98]'
                     : 'border-amber-200'
@@ -51,18 +54,16 @@ export default function Tasks() {
                     Tous les {task.recurrence_days} jour{task.recurrence_days > 1 ? 's' : ''}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleComplete(task.id)}
-                  disabled={completedId === task.id}
+                <span
                   className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                     completedId === task.id
                       ? 'bg-green-100 text-green-600'
-                      : 'bg-teal-500 text-white hover:bg-teal-600 active:scale-95'
+                      : 'bg-teal-500 text-white'
                   }`}
                 >
                   {completedId === task.id ? '✓ Fait !' : `+${task.points} pts`}
-                </button>
-              </div>
+                </span>
+              </button>
             ))}
           </div>
         </div>

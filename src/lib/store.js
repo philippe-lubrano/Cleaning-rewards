@@ -170,7 +170,13 @@ export function purchaseReward(rewardId, userId) {
   const data = loadData()
   const reward = data.rewards.find((r) => r.id === rewardId)
   const user = data.users.find((u) => u.id === userId)
-  if (!reward || !user || user.points < reward.cost) return null
+  const alreadyPurchased = data.history.some(
+    (entry) =>
+      entry.type === 'reward' &&
+      entry.user_id === userId &&
+      entry.reference_id === rewardId
+  )
+  if (!reward || !user || user.points < reward.cost || alreadyPurchased) return null
 
   user.points -= reward.cost
 
