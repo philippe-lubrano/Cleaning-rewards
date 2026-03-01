@@ -1,20 +1,28 @@
-import { useState } from 'react'
 import { useApp } from '../context/useApp'
 
 export default function Tasks() {
-  const { tasks, completeTask } = useApp()
-  const [completedId, setCompletedId] = useState(null)
+  const { tasks, history, completeTask, undoTaskCompletion } = useApp()
 
   const now = new Date()
   const dueTasks = tasks.filter((t) => new Date(t.next_due) <= now)
   const upcomingTasks = tasks.filter((t) => new Date(t.next_due) > now)
 
-  const handleComplete = (taskId) => {
-    const result = completeTask(taskId)
-    if (result) {
-      setCompletedId(taskId)
-      setTimeout(() => setCompletedId(null), 1500)
+  const latestUndoEntryByTaskId = history.reduce((acc, entry) => {
+    if (entry.type !== 'task') return acc
+
+    const existing = acc[entry.reference_id]
+    if (!existing || new Date(entry.created_at) > new Date(existing.created_at)) {
+      acc[entry.reference_id] = entry
     }
+    return acc
+  }, {})
+
+  const handleComplete = async (taskId) => {
+    await completeTask(taskId)
+  }
+
+  const handleUndo = async (entryId) => {
+    await undoTaskCompletion(entryId)
   }
 
   const formatDue = (dateStr) => {
@@ -41,12 +49,7 @@ export default function Tasks() {
                 type="button"
                 key={task.id}
                 onClick={() => handleComplete(task.id)}
-                disabled={completedId === task.id}
-                className={`w-full bg-white rounded-xl border px-4 py-4 flex items-center justify-between text-left transition-all ${
-                  completedId === task.id
-                    ? 'border-green-300 bg-green-50 scale-[0.98]'
-                    : 'border-amber-200'
-                }`}
+                className="w-full bg-white rounded-xl border px-4 py-4 flex items-center justify-between text-left transition-all border-amber-200"
               >
                 <div>
                   <p className="font-medium text-stone-700">{task.name}</p>
@@ -54,14 +57,8 @@ export default function Tasks() {
                     Tous les {task.recurrence_days} jour{task.recurrence_days > 1 ? 's' : ''}
                   </p>
                 </div>
-                <span
-                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                    completedId === task.id
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-teal-500 text-white'
-                  }`}
-                >
-                  {completedId === task.id ? '✓ Fait !' : `+${task.points} pts`}
+                <span className="rounded-xl px-4 py-2 text-sm font-medium transition-all bg-teal-500 text-white">
+                  +{task.points} pts
                 </span>
               </button>
             ))}
@@ -87,15 +84,27 @@ export default function Tasks() {
             {upcomingTasks.map((task) => (
               <div
                 key={task.id}
-                className="bg-white/60 rounded-xl border border-stone-100 px-4 py-3 flex items-center justify-between"
+                className="relative bg-white/60 rounded-xl border border-stone-100 px-4 py-3 flex items-center justify-between"
               >
+                {latestUndoEntryByTaskId[task.id] && (
+                  <button
+                    type="button"
+                    onClick={() => handleUndo(latestUndoEntryByTaskId[task.id].id)}
+                    className="absolute -top-2 -right-2 z-10 h-7 w-7 rounded-full bg-rose-500 text-white text-sm font-bold hover:bg-rose-600"
+                    title="Annuler"
+                  >
+                    ✕
+                  </button>
+                )}
                 <div>
                   <p className="text-sm text-stone-500">{task.name}</p>
                   <p className="text-xs text-stone-300 mt-0.5">{formatDue(task.next_due)}</p>
                 </div>
-                <span className="text-xs text-stone-300 bg-stone-100 px-2 py-1 rounded-full">
-                  {task.points} pts
-                </span>
+                <div className="flex items-center gap-2 pr-8">
+                  <span className="text-xs text-stone-300 bg-stone-100 px-2 py-1 rounded-full">
+                    {task.points} pts
+                  </span>
+                </div>
               </div>
             ))}
           </div>

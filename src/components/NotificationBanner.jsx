@@ -3,6 +3,14 @@ import { useApp } from '../context/useApp'
 export default function NotificationBanner() {
   const { notifications, dismissNotification, clearNotifications } = useApp()
 
+  const handleDismiss = async (notifId) => {
+    await dismissNotification(notifId)
+  }
+
+  const handleClear = async () => {
+    await clearNotifications()
+  }
+
   if (notifications.length === 0) return null
 
   return (
@@ -21,7 +29,7 @@ export default function NotificationBanner() {
               </p>
             </div>
             <button
-              onClick={() => dismissNotification(notif.id)}
+              onClick={() => handleDismiss(notif.id)}
               className="text-rose-300 hover:text-rose-500 text-lg"
             >
               ✕
@@ -30,7 +38,7 @@ export default function NotificationBanner() {
         ))}
         {notifications.length > 1 && (
           <button
-            onClick={clearNotifications}
+            onClick={handleClear}
             className="w-full text-center text-xs text-rose-400 hover:text-rose-600 py-1"
           >
             Tout effacer

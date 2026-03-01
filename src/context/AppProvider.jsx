@@ -1,30 +1,133 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { AppContext } from './AppContext'
 import * as store from '../lib/store'
 
 export function AppProvider({ children }) {
+  const [foyerPseudo, setFoyerPseudo] = useState(() => store.getCurrentFoyerPseudo())
   const [currentUser, setCurrentUser] = useState(null)
-  const [users, setUsers] = useState(() => store.getUsers())
-  const [tasks, setTasks] = useState(() => store.getTasks())
-  const [rewards, setRewards] = useState(() => store.getRewards())
-  const [history, setHistory] = useState(() => store.getHistory())
+  const [users, setUsers] = useState([])
+  const [tasks, setTasks] = useState([])
+  const [rewards, setRewards] = useState([])
+  const [history, setHistory] = useState([])
   const [notifications, setNotifications] = useState([])
+  const currentUserId = currentUser?.id || null
 
-  const refreshAll = useCallback(() => {
-    setUsers(store.getUsers())
-    setTasks(store.getTasks())
-    setRewards(store.getRewards())
-    setHistory(store.getHistory())
-    if (currentUser) {
-      setNotifications(store.getNotifications(currentUser.id))
+  const refreshAll = useCallback(async () => {
+    if (!foyerPseudo) {
+      setUsers([])
+      setTasks([])
+      setRewards([])
+      setHistory([])
+      setNotifications([])
+      setCurrentUser(null)
+      return
     }
-  }, [currentUser])
+
+    const [nextUsers, nextTasks, nextRewards, nextHistory] = await Promise.all([
+      store.getUsers(),
+      store.getTasks(),
+      store.getRewards(),
+      store.getHistory(),
+    ])
+
+    setUsers(nextUsers)
+    setTasks(nextTasks)
+    setRewards(nextRewards)
+    setHistory(nextHistory)
+
+    if (currentUserId) {
+      const refreshedUser = nextUsers.find((user) => user.id === currentUserId) || null
+      setCurrentUser(refreshedUser)
+      if (refreshedUser) {
+        setNotifications(await store.getNotifications(refreshedUser.id))
+      } else {
+        setNotifications([])
+      }
+    }
+  }, [currentUserId, foyerPseudo])
+
+  useEffect(() => {
+    if (!foyerPseudo) return
+
+    let isMounted = true
+
+    const loadInitialData = async () => {
+      const [nextUsers, nextTasks, nextRewards, nextHistory] = await Promise.all([
+        store.getUsers(),
+        store.getTasks(),
+        store.getRewards(),
+        store.getHistory(),
+      ])
+
+      if (!isMounted) return
+
+      setUsers(nextUsers)
+      setTasks(nextTasks)
+      setRewards(nextRewards)
+      setHistory(nextHistory)
+
+      if (currentUserId) {
+        const refreshedUser = nextUsers.find((user) => user.id === currentUserId) || null
+        setCurrentUser(refreshedUser)
+        if (refreshedUser) {
+          setNotifications(await store.getNotifications(refreshedUser.id))
+        } else {
+          setNotifications([])
+        }
+      }
+    }
+
+    void loadInitialData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [currentUserId, foyerPseudo])
+
+  const loginWithPseudo = useCallback(async (pseudo) => {
+    const normalized = await store.setCurrentFoyerPseudo(pseudo)
+    if (!normalized) return null
+
+    setFoyerPseudo(normalized)
+    setCurrentUser(null)
+    setNotifications([])
+
+    const [nextUsers, nextTasks, nextRewards, nextHistory] = await Promise.all([
+      store.getUsers(),
+      store.getTasks(),
+      store.getRewards(),
+      store.getHistory(),
+    ])
+
+    setUsers(nextUsers)
+    setTasks(nextTasks)
+    setRewards(nextRewards)
+    setHistory(nextHistory)
+
+    return normalized
+  }, [])
+
+  const logoutFoyer = useCallback(() => {
+    store.clearCurrentFoyerPseudo()
+    setFoyerPseudo(null)
+    setCurrentUser(null)
+    setUsers([])
+    setTasks([])
+    setRewards([])
+    setHistory([])
+    setNotifications([])
+  }, [])
 
   const selectUser = useCallback(
-    (userId) => {
-      const user = store.getUser(userId)
+    async (userId) => {
+      const user = await store.getUser(userId)
       setCurrentUser(user)
-      setNotifications(store.getNotifications(userId))
+      if (!user) {
+        setNotifications([])
+        return null
+      }
+      setNotifications(await store.getNotifications(userId))
+      return user
     },
     []
   )
@@ -35,12 +138,23 @@ export function AppProvider({ children }) {
   }, [])
 
   const completeTask = useCallback(
-    (taskId) => {
+    async (taskId) => {
       if (!currentUser) return null
-      const result = store.completeTask(taskId, currentUser.id)
+      const result = await store.completeTask(taskId, currentUser.id)
       if (result) {
-        refreshAll()
-        setCurrentUser(store.getUser(currentUser.id))
+        await refreshAll()
+      }
+      return result
+    },
+    [currentUser, refreshAll]
+  )
+
+  const undoTaskCompletion = useCallback(
+    async (historyEntryId) => {
+      if (!currentUser) return null
+      const result = await store.undoTaskCompletion(historyEntryId)
+      if (result) {
+        await refreshAll()
       }
       return result
     },
@@ -48,64 +162,63 @@ export function AppProvider({ children }) {
   )
 
   const addTask = useCallback(
-    (taskData) => {
-      const task = store.createTask(taskData)
-      refreshAll()
+    async (taskData) => {
+      const task = await store.createTask(taskData)
+      await refreshAll()
       return task
     },
     [refreshAll]
   )
 
   const editTask = useCallback(
-    (taskId, updates) => {
-      const task = store.updateTask(taskId, updates)
-      refreshAll()
+    async (taskId, updates) => {
+      const task = await store.updateTask(taskId, updates)
+      await refreshAll()
       return task
     },
     [refreshAll]
   )
 
   const removeTask = useCallback(
-    (taskId) => {
-      store.deleteTask(taskId)
-      refreshAll()
+    async (taskId) => {
+      await store.deleteTask(taskId)
+      await refreshAll()
     },
     [refreshAll]
   )
 
   const addReward = useCallback(
-    (rewardData) => {
-      const reward = store.createReward(rewardData)
-      refreshAll()
+    async (rewardData) => {
+      const reward = await store.createReward(rewardData)
+      await refreshAll()
       return reward
     },
     [refreshAll]
   )
 
   const editReward = useCallback(
-    (rewardId, updates) => {
-      const reward = store.updateReward(rewardId, updates)
-      refreshAll()
+    async (rewardId, updates) => {
+      const reward = await store.updateReward(rewardId, updates)
+      await refreshAll()
       return reward
     },
     [refreshAll]
   )
 
   const removeReward = useCallback(
-    (rewardId) => {
-      store.deleteReward(rewardId)
-      refreshAll()
+    async (rewardId) => {
+      await store.deleteReward(rewardId)
+      await refreshAll()
     },
     [refreshAll]
   )
 
   const buyReward = useCallback(
-    (rewardId) => {
+    async (rewardId) => {
       if (!currentUser) return null
-      const result = store.purchaseReward(rewardId, currentUser.id)
+      const result = await store.purchaseReward(rewardId, currentUser.id)
       if (result) {
-        refreshAll()
-        setCurrentUser(store.getUser(currentUser.id))
+        await refreshAll()
       }
       return result
     },
@@ -113,43 +226,47 @@ export function AppProvider({ children }) {
   )
 
   const dismissNotification = useCallback(
-    (notifId) => {
-      store.markNotificationRead(notifId)
+    async (notifId) => {
+      await store.markNotificationRead(notifId)
       if (currentUser) {
-        setNotifications(store.getNotifications(currentUser.id))
+        setNotifications(await store.getNotifications(currentUser.id))
       }
     },
     [currentUser]
   )
 
-  const clearNotifications = useCallback(() => {
+  const clearNotifications = useCallback(async () => {
     if (currentUser) {
-      store.clearAllNotifications(currentUser.id)
+      await store.clearAllNotifications(currentUser.id)
       setNotifications([])
     }
   }, [currentUser])
 
   const updateUserName = useCallback(
-    (userId, name) => {
-      store.updateUserName(userId, name)
-      refreshAll()
+    async (userId, name) => {
+      await store.updateUserName(userId, name)
+      await refreshAll()
       if (currentUser && currentUser.id === userId) {
-        setCurrentUser(store.getUser(userId))
+        setCurrentUser(await store.getUser(userId))
       }
     },
     [currentUser, refreshAll]
   )
 
   const value = {
+    foyerPseudo,
     currentUser,
     users,
     tasks,
     rewards,
     history,
     notifications,
+    loginWithPseudo,
+    logoutFoyer,
     selectUser,
     logout,
     completeTask,
+    undoTaskCompletion,
     addTask,
     editTask,
     removeTask,

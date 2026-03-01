@@ -24,7 +24,7 @@ export default function TaskAdmin() {
     setModalOpen(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const data = {
       name: form.name.trim(),
@@ -34,25 +34,25 @@ export default function TaskAdmin() {
     if (!data.name) return
 
     if (editing) {
-      editTask(editing.id, data)
+      await editTask(editing.id, data)
     } else {
-      addTask(data)
+      await addTask(data)
     }
     setModalOpen(false)
   }
 
-  const handleDelete = (task) => {
+  const handleDelete = async (task) => {
     if (window.confirm(`Supprimer "${task.name}" ?`)) {
-      removeTask(task.id)
+      await removeTask(task.id)
     }
   }
 
-  const handleUpdateFirstName = (e) => {
+  const handleUpdateFirstName = async (e) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const name = String(formData.get('firstName') || '').trim()
     if (!name || !currentUser) return
-    updateUserName(currentUser.id, name)
+    await updateUserName(currentUser.id, name)
   }
 
   return (

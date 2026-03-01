@@ -3,14 +3,17 @@ import { useApp } from '../context/useApp'
 import { useState } from 'react'
 
 export default function SelectUser() {
-  const { users, selectUser, updateUserName } = useApp()
+  const { foyerPseudo, users, loginWithPseudo, logoutFoyer, selectUser, updateUserName } = useApp()
   const navigate = useNavigate()
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
+  const [pseudo, setPseudo] = useState('')
 
-  const handleSelect = (userId) => {
-    selectUser(userId)
-    navigate('/dashboard')
+  const handleSelect = async (userId) => {
+    const selected = await selectUser(userId)
+    if (selected) {
+      navigate('/dashboard')
+    }
   }
 
   const startEdit = (e, user) => {
@@ -19,12 +22,20 @@ export default function SelectUser() {
     setEditName(user.name)
   }
 
-  const saveEdit = (e) => {
+  const saveEdit = async (e) => {
     e.preventDefault()
     if (editName.trim()) {
-      updateUserName(editingId, editName.trim())
+      await updateUserName(editingId, editName.trim())
     }
     setEditingId(null)
+  }
+
+  const handlePseudoSubmit = async (e) => {
+    e.preventDefault()
+    const normalized = await loginWithPseudo(pseudo)
+    if (normalized) {
+      setPseudo('')
+    }
   }
 
   return (
@@ -32,10 +43,44 @@ export default function SelectUser() {
       <div className="text-center mb-10">
         <span className="text-5xl mb-4 block">🏠</span>
         <h1 className="text-2xl font-bold text-stone-700 mb-2">Cleaning Rewards</h1>
-        <p className="text-stone-400 text-sm">Qui fait le ménage aujourd'hui ?</p>
+        <p className="text-stone-400 text-sm">
+          {foyerPseudo ? "Qui fait le ménage aujourd'hui ?" : 'Entre le pseudo de ton foyer'}
+        </p>
       </div>
 
-      <div className="w-full max-w-sm space-y-4">
+      {!foyerPseudo && (
+        <form onSubmit={handlePseudoSubmit} className="w-full max-w-sm space-y-3">
+          <input
+            type="text"
+            value={pseudo}
+            onChange={(e) => setPseudo(e.target.value)}
+            placeholder="ex: maison-dupond"
+            className="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full bg-teal-500 text-white rounded-xl px-4 py-3 font-medium hover:bg-teal-600"
+          >
+            Continuer
+          </button>
+        </form>
+      )}
+
+      {foyerPseudo && (
+        <div className="w-full max-w-sm mb-4 flex items-center justify-between bg-white/70 border border-stone-200 rounded-xl px-3 py-2">
+          <p className="text-xs text-stone-500 truncate">Foyer: {foyerPseudo}</p>
+          <button
+            type="button"
+            onClick={logoutFoyer}
+            className="text-xs text-rose-500 hover:text-rose-600"
+          >
+            Changer
+          </button>
+        </div>
+      )}
+
+      {foyerPseudo && <div className="w-full max-w-sm space-y-4">
         {users.map((user) => (
           <div key={user.id}>
             {editingId === user.id ? (
@@ -92,11 +137,13 @@ export default function SelectUser() {
             )}
           </div>
         ))}
-      </div>
+      </div>}
 
-      <p className="text-xs text-stone-300 mt-10">
-        Appuyez sur votre prénom pour commencer
-      </p>
+      {foyerPseudo && (
+        <p className="text-xs text-stone-300 mt-10">
+          Appuyez sur votre prénom pour commencer
+        </p>
+      )}
     </div>
   )
 }

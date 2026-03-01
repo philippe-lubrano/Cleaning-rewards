@@ -11,6 +11,7 @@ Application web mobile-first pour gérer les tâches ménagères en couple, avec
 
 ## Fonctionnalités
 
+- 🔐 **Connexion foyer simple** — Un pseudo correspond à un foyer (foyer_id dérivé du pseudo)
 - 👤 **Sélection du profil** — Un seul compte foyer, chaque membre clique sur son prénom
 - 📊 **Tableau de bord** — Solde de points, tâches du jour, aperçu du partenaire
 - ✅ **Tâches** — Catalogue avec récurrence, validation en un clic pour gagner des points
@@ -26,7 +27,9 @@ npm install
 npm run dev
 ```
 
-L'application fonctionne immédiatement en mode local (localStorage). Pour utiliser Supabase :
+L'application fonctionne immédiatement en mode local (localStorage). Si Supabase est configuré, les données (tâches, points, récompenses, historique, notifications) sont persistées en base de données.
+
+Pour utiliser Supabase :
 
 1. Créer un projet sur [supabase.com](https://supabase.com)
 2. Exécuter `supabase/schema.sql` puis `supabase/seed.sql` dans l'éditeur SQL
@@ -36,6 +39,8 @@ L'application fonctionne immédiatement en mode local (localStorage). Pour utili
 VITE_SUPABASE_URL=https://votre-projet.supabase.co
 VITE_SUPABASE_ANON_KEY=votre-clé-anon
 ```
+
+Si votre base existe déjà, appliquez aussi la table `notifications` depuis `supabase/schema.sql`.
 
 ## Structure du projet
 

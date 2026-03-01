@@ -37,7 +37,7 @@ export default function Rewards() {
     setModalOpen(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const data = {
       name: form.name.trim(),
@@ -46,25 +46,25 @@ export default function Rewards() {
     if (!data.name || data.cost <= 0) return
 
     if (editing) {
-      editReward(editing.id, data)
+      await editReward(editing.id, data)
     } else {
-      addReward({ ...data, created_by: currentUser.id })
+      await addReward({ ...data, created_by: currentUser.id })
     }
     setModalOpen(false)
   }
 
-  const handleBuy = (reward) => {
+  const handleBuy = async (reward) => {
     if (currentUser.points < reward.cost) return
-    const result = buyReward(reward.id)
+    const result = await buyReward(reward.id)
     if (result) {
       setPurchasedId(reward.id)
       setTimeout(() => setPurchasedId(null), 2000)
     }
   }
 
-  const handleDelete = (reward) => {
+  const handleDelete = async (reward) => {
     if (window.confirm(`Supprimer "${reward.name}" ?`)) {
-      removeReward(reward.id)
+      await removeReward(reward.id)
     }
   }
 

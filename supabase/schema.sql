@@ -49,3 +49,13 @@ CREATE TABLE IF NOT EXISTS history (
   points INTEGER NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Table: notifications (alerts for partner purchases)
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  foyer_id UUID REFERENCES foyer(id) ON DELETE CASCADE,
+  for_user UUID REFERENCES users(id) ON DELETE CASCADE,
+  message TEXT NOT NULL,
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
